@@ -7,20 +7,27 @@ import (
 )
 
 // Scan implements the Scanner interface.
-func (x *Timestamp) Scan(src interface{}) error {
-	switch t := src.(type) {
+func (x *Timestamp) Scan(value interface{}) error {
+	switch t := value.(type) {
 	case time.Time:
 		*x = *New(t)
+	case string:
+		timePoint, err := time.Parse(time.RFC3339, t)
+		if err != nil {
+			return err
+		}
+
+		*x = *New(timePoint)
 	default:
-		return errors.New("not a Time")
+		return errors.New("incompatible type for Timestamp")
 	}
 	return nil
 }
 
 // Value implements the driver Valuer interface.
 func (x *Timestamp) Value() (driver.Value, error) {
-	if !x.IsValid() {
-		return nil, nil
+	if x == nil || !x.IsValid() {
+		return time.Unix(0, 0), nil
 	}
 	return x.AsTime(), nil
 }
